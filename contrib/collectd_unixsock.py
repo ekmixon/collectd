@@ -50,14 +50,14 @@ class Collectd():
             return None
         args = []
         if timeout:
-            args.append("timeout=%s" % timeout)
+            args.append(f"timeout={timeout}")
         if plugins:
-            plugin_args = map(lambda x: "plugin=%s" % x, plugins)
+            plugin_args = map(lambda x: f"plugin={x}", plugins)
             args.extend(plugin_args)
         if identifiers:
-            identifier_args = map(lambda x: "identifier=%s" % x, identifiers)
+            identifier_args = map(lambda x: f"identifier={x}", identifiers)
             args.extend(identifier_args)
-        return self._cmd('FLUSH %s' % ' '.join(args))
+        return self._cmd(f"FLUSH {' '.join(args)}")
 
     def getthreshold(self, identifier):
         """Send a GETTHRESHOLD command.
@@ -98,11 +98,11 @@ class Collectd():
             http://collectd.org/wiki/index.php/Plain_text_protocol#LISTVAL
 
         """
-        numvalues = self._cmd('LISTVAL')
-        lines = []
-        if numvalues:
-            lines = self._readlines(numvalues)
-        return lines
+        return (
+            self._readlines(numvalues)
+            if (numvalues := self._cmd('LISTVAL'))
+            else []
+        )
 
     def putnotif(self, message, options={}):
         """Send a PUTNOTIF command.
@@ -116,10 +116,10 @@ class Collectd():
         """
         args = []
         if options:
-            options_args = map(lambda x: "%s=%s" % (x, options[x]), options)
+            options_args = map(lambda x: f"{x}={options[x]}", options)
             args.extend(options_args)
         args.append('message="%s"' % message)
-        return self._cmd('PUTNOTIF %s' % ' '.join(args))
+        return self._cmd(f"PUTNOTIF {' '.join(args)}")
 
     def putval(self, identifier, values, options={}):
         """Send a PUTVAL command.
@@ -131,14 +131,13 @@ class Collectd():
             http://collectd.org/wiki/index.php/Plain_text_protocol#PUTVAL
 
         """
-        args = []
-        args.append('"%s"' % identifier)
+        args = ['"%s"' % identifier]
         if options:
-            options_args = map(lambda x: "%s=%s" % (x, options[x]), options)
+            options_args = map(lambda x: f"{x}={options[x]}", options)
             args.extend(options_args)
         values = map(str, values)
         args.append(':'.join(values))
-        return self._cmd('PUTVAL %s' % ' '.join(args))
+        return self._cmd(f"PUTVAL {' '.join(args)}")
 
     def _cmd(self, c):
         try:

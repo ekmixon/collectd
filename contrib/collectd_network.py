@@ -82,17 +82,17 @@ def decode_network_values(ptype, plen, buf):
 
     result = []
     for dstype in [ord(x) for x in buf[header.size+short.size:off]]:
-        if dstype == DS_TYPE_COUNTER:
+        if (
+            dstype == DS_TYPE_COUNTER
+            or dstype != DS_TYPE_GAUGE
+            and dstype == DS_TYPE_DERIVE
+            or dstype != DS_TYPE_GAUGE
+            and dstype == DS_TYPE_ABSOLUTE
+        ):
             result.append((dstype, number.unpack_from(buf, off)[0]))
             off += valskip
         elif dstype == DS_TYPE_GAUGE:
             result.append((dstype, double.unpack_from(buf, off)[0]))
-            off += valskip
-        elif dstype == DS_TYPE_DERIVE:
-            result.append((dstype, number.unpack_from(buf, off)[0]))
-            off += valskip
-        elif dstype == DS_TYPE_ABSOLUTE:
-            result.append((dstype, number.unpack_from(buf, off)[0]))
             off += valskip
         else:
             raise ValueError("DS type %i unsupported" % dstype)
@@ -212,16 +212,13 @@ class Notification(Data):
         return self.SEVERITY.get(self.severity, "UNKNOWN")
 
     def __str__(self):
-        return "%s [%s] %s" % (
-                super(Notification, self).__str__(),
-                self.severitystring,
-                self.message)
+        return f"{super(Notification, self).__str__()} [{self.severitystring}] {self.message}"
 
 
 
 class Values(Data, list):
     def __str__(self):
-        return "%s %s" % (Data.__str__(self), list.__str__(self))
+        return f"{Data.__str__(self)} {list.__str__(self)}"
 
 
 
